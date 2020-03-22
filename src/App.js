@@ -12,6 +12,7 @@ const App = () => {
     const [gameActive, setGameActive] = useState(false);
     const [cards, setCards] = useState([]);
     const [cardsOnTable, setCardsOnTable] = useState([]);
+    const [log, setLog] = useState([]);
 
     useEffect(() => {
         if (socket.id !== undefined) {
@@ -20,7 +21,6 @@ const App = () => {
     }, []);
 
     socket.on('join game', (players) => {
-        console.log('join game');
         setPlayers(players);
     });
     socket.on('start game', () => {
@@ -35,14 +35,21 @@ const App = () => {
     socket.on('cards on table', (cards) => {
         setCardsOnTable(cards);
     });
+    socket.on('log', (line) => {
+        const newLog = log.concat(line);
+        setLog(newLog);
+    });
 
     const playCard = (card) => {
         socket.emit('play card', card);
     };
 
-    const playerList = players.map((name) => {
+    const playerList = players.map(({ name, id }) => {
         return (
-            e('li', null, name)
+            e('li', {
+                key: id,
+                onClick: () => socket.emit('share', id)
+            }, name)
         );
     });
 
@@ -52,8 +59,10 @@ const App = () => {
                 e('input', {
                     type: 'text',
                     value: input,
+                    key: 'input',
                     onChange: ({ target }) => setInput(target.value) }),
                 e('button', {
+                    key: 'button',
                     onClick: () => {
                         if (input.length > 0) {
                             socket.emit('join game', input);
@@ -63,9 +72,13 @@ const App = () => {
                     }
                 }, 'Send')
             ]),
-            e('ul', null, playerList),
-            e(Table, { cards: cardsOnTable }),
-            cards.length > 0 && e(CardContainer, { cards, playCard })
+            e('ul', { key: 'playerlist' }, playerList),
+            e('div', {
+                key: 'table',
+                style: { marginBottom: '20px' }
+            }, e(Table, { cards: cardsOnTable })),
+            e(CardContainer, { key: 'hand', cards, playCard }),
+            log.map(entry => e('div', { key: entry }, entry)).reverse()
         ])
     );
 };
