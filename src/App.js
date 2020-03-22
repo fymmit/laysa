@@ -1,4 +1,6 @@
 const { useState, useEffect, createElement: e } = React;
+import CardContainer from './components/cardcontainer.js';
+import Table from './components/table.js';
 
 const socket = io();
 
@@ -8,6 +10,8 @@ const App = () => {
     const [playerName, setPlayerName] = useState('');
     const [id, setId] = useState('');
     const [gameActive, setGameActive] = useState(false);
+    const [cards, setCards] = useState([]);
+    const [cardsOnTable, setCardsOnTable] = useState([]);
 
     useEffect(() => {
         if (socket.id !== undefined) {
@@ -22,6 +26,19 @@ const App = () => {
     socket.on('start game', () => {
         setGameActive(true);
     });
+    socket.on('deal cards', (cards) => {
+        setCards(cards);
+    });
+    socket.on('play card', (cards) => {
+        setCards(cards);
+    });
+    socket.on('cards on table', (cards) => {
+        setCardsOnTable(cards);
+    });
+
+    const playCard = (card) => {
+        socket.emit('play card', card);
+    };
 
     const playerList = players.map((name) => {
         return (
@@ -46,7 +63,9 @@ const App = () => {
                     }
                 }, 'Send')
             ]),
-            e('ul', null, playerList)
+            e('ul', null, playerList),
+            e(Table, { cards: cardsOnTable }),
+            cards.length > 0 && e(CardContainer, { cards, playCard })
         ])
     );
 };

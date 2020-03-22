@@ -19,6 +19,7 @@ const fullDeckOfCards = () => {
             cards.push({ suit: i, rank: j });
         }
     }
+    shuffle(cards);
     return cards;
 };
 
